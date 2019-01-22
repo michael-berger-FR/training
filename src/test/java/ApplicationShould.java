@@ -10,6 +10,8 @@ public class ApplicationShould {
         Publisher publisher = new Publisher();
         publisher.subscribe(mailSentHandler);
 
+        // When
+
 
 
     }
