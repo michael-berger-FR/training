@@ -1,103 +1,34 @@
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.UUID;
 
 public class SentMailHandlerShould {
     @Test
     public void createAndStoreMailSentProjectionWhenReceiveMailSent() {
-        MailSentHandler mailSentHandler = new MailSentHandler(new MailSentRepository());
+        MailSentRepository repository = new MailSentRepository();
+        MailSentHandler mailSentHandler = new MailSentHandler(repository);
+        UUID id = UUID.randomUUID();
 
-        mailSentHandler.handle(new MailSentEvent(1, "hello"));
+        mailSentHandler.handle(new MailSentEvent(id, "hello"));
 
-        Assertions.assertThat(mailSentHandler.getSentMailProjection(1)).isNotNull();
-        Assertions.assertThat(mailSentHandler.getSentMailProjection(1).getContent()).isEqualTo("hello");
+        Assertions.assertThat(repository.get(id)).isNotNull();
+        Assertions.assertThat(repository.get(id).getContent()).isEqualTo("hello");
     }
 
     @Test
     public void deleteMailSentProjectionWhenDeletedMailEventWithSentMail() {
         // Given
         MailSentRepository repository = new MailSentRepository();
-        repository.put(1, new MailSentProjection(1, "hello"));
+        UUID id = UUID.randomUUID();
+        repository.put(new MailSentProjection(id, "hello"));
         MailSentHandler mailSentHandler = new MailSentHandler(repository);
 
         // When
-        mailSentHandler.handle(new MailDeleted(1));
+        mailSentHandler.handle(new MailDeleted(id));
 
         // Then
-        Assertions.assertThat(mailSentHandler.getSentMailProjection(1)).isNull();
+        Assertions.assertThat(repository.get(id)).isNull();
     }
 
-    private class MailSentHandler {
-
-
-        private final MailSentRepository repository;
-
-        public MailSentHandler(MailSentRepository repository) {
-            this.repository = repository;
-        }
-
-        public void handle(MailSentEvent hello) {
-            repository.put(hello.id, new MailSentProjection(hello.id, hello.content));
-        }
-
-        public MailSentProjection getSentMailProjection(int i) {
-            return repository.get(i);
-        }
-
-        public void handle(MailDeleted mailDeleted) {
-            repository.remove(mailDeleted.id);
-        }
-    }
-
-    private class MailSentEvent {
-
-        public final String content;
-        public final Integer id;
-
-        public MailSentEvent(int id, String content) {
-            this.id = id;
-            this.content = content;
-        }
-    }
-
-    private class MailSentProjection {
-        private final String content;
-        private final Integer id;
-
-        public MailSentProjection(Integer id, String content) {
-            this.id = id;
-            this.content = content;
-        }
-
-        public String getContent() {
-            return content;
-        }
-    }
-
-    private class MailDeleted {
-
-        public final int id;
-
-        public MailDeleted(int id) {
-            this.id = id;
-        }
-    }
-
-    private class MailSentRepository {
-        Map<Integer, MailSentProjection> repository = new HashMap<>();
-
-        public void put(Integer id, MailSentProjection sentMailProjection) {
-            repository.put(id, sentMailProjection);
-        }
-
-        public MailSentProjection get(int i) {
-            return repository.get(i);
-        }
-
-        public void remove(int id) {
-            repository.remove(id);
-        }
-    }
 }
